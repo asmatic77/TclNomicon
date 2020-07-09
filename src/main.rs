@@ -4,6 +4,8 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::io::{self, BufRead};
 
+use amethyst::prelude::*;
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Enchantment {
     name: String,
