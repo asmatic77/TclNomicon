@@ -1,3 +1,6 @@
+
+[![Build Status](https://travis-ci.com/asmatic77/TclNomicon.svg?branch=master)](https://travis-ci.com/asmatic77/TclNomicon)
+
 # TclNomicon
 
 >*That is not crashed which can eternal lie. And with strange aeons even product may crash.*  
