@@ -4,7 +4,46 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::io::{self, BufRead};
 
-use amethyst::prelude::*;
+use amethyst::{
+    prelude::*,
+    renderer::{
+        plugins::{RenderFlat2D, RenderToWindow},
+        types::DefaultBackend, 
+        RenderingBundle,
+    },
+    utils::application_root_dir,
+};
+
+
+pub struct TCLNomiconState; // the main "game" struct
+impl SimpleState for TCLNomiconState  {}
+
+fn main() -> amethyst::Result<()> {
+    // setup a Logger
+    amethyst::start_logger(Default::default());
+
+    // load display config
+    let app_root = application_root_dir()?;
+    let display_config_path = app_root.join("config").join("display.ron");
+
+    // create an application
+    let game_data = GameDataBuilder::default()
+        .with_bundle(
+            RenderingBundle::<DefaultBackend>::new()
+            // RenderToWindow plugin provides acaffolding for opning window and draw on it
+            .with_plugin(
+                RenderToWindow::from_config_path(display_config_path)?
+                .with_clear([0.0, 0.0, 0.0, 1.0]),
+            )
+            //RenderFlat2D plugin is used to render entities with a SpriteRender component
+            .with_plugin(RenderFlat2D::default()),
+        )?;
+    let assets_dir = app_root.join("assets");
+    let mut game = Application::new(assets_dir, TCLNomiconState, game_data)?;
+    game.run();
+    
+    Ok(())
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Enchantment {
@@ -12,7 +51,7 @@ struct Enchantment {
     spell: String,
 }
 
-fn main() {
+fn main_old() {
     let mut book = Vec::new();
 
     match std::fs::read_to_string("book.json") {
