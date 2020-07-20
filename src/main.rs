@@ -4,6 +4,12 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::io::{self, BufRead};
 
+mod TCLNomicon;
+use crate::TCLNomicon::TCLNomiconState;
+
+mod systems;
+mod audio;
+
 use amethyst::{
     prelude::*,
     renderer::{
@@ -11,12 +17,14 @@ use amethyst::{
         types::DefaultBackend, 
         RenderingBundle,
     },
+    core::transform::TransformBundle,
     utils::application_root_dir,
+    input::{InputBundle, StringBindings},
 };
+use amethyst::ui::{RenderUi, UiBundle};
+use amethyst::audio::{AudioBundle,DjSystemDesc};
 
-
-pub struct TCLNomiconState; // the main "game" struct
-impl SimpleState for TCLNomiconState  {}
+use crate::audio::Music;
 
 fn main() -> amethyst::Result<()> {
     // setup a Logger
@@ -26,8 +34,25 @@ fn main() -> amethyst::Result<()> {
     let app_root = application_root_dir()?;
     let display_config_path = app_root.join("config").join("display.ron");
 
+    // load config data (input bundle)
+    let binding_path = app_root.join("config").join("bindings.ron");
+    let input_bundle = InputBundle::<StringBindings>::new()
+        .with_bindings_from_file(binding_path)?;
     // create an application
     let game_data = GameDataBuilder::default()
+        .with_bundle(TransformBundle::new())?
+        .with_bundle(input_bundle)?
+        .with_bundle(UiBundle::<StringBindings>::new())?
+        .with_bundle(AudioBundle::default())?
+        .with_system_desc(
+            DjSystemDesc::new(|music: &mut Music| music.music.next()),
+            "dj_system",
+            &[],
+        )
+        .with(systems::PaddleSystem, "paddle_system", &["input_system"])
+        .with(systems::MoveBallsSystem, "ball_system",&[])
+        .with(systems::BounceSystem, "collision_system", &["paddle_system", "ball_system"])
+        .with(systems::WinnerSystem, "winer_system", &["ball_system"])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
             // RenderToWindow plugin provides acaffolding for opning window and draw on it
@@ -36,10 +61,12 @@ fn main() -> amethyst::Result<()> {
                 .with_clear([0.0, 0.0, 0.0, 1.0]),
             )
             //RenderFlat2D plugin is used to render entities with a SpriteRender component
-            .with_plugin(RenderFlat2D::default()),
+            .with_plugin(RenderFlat2D::default())    
+            .with_plugin(RenderUi::default()),
         )?;
+        
     let assets_dir = app_root.join("assets");
-    let mut game = Application::new(assets_dir, TCLNomiconState, game_data)?;
+    let mut game = Application::new(assets_dir, TCLNomiconState::default(), game_data)?;
     game.run();
     
     Ok(())
